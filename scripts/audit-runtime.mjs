@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { resolveHermesApp } from './app-resolver.mjs';
 
 function parseArgs(argv) {
   const args = {
@@ -353,11 +354,12 @@ function summarize(scans, limit, options = {}) {
 
 const args = parseArgs(process.argv.slice(2));
 if (!fs.existsSync(args.app)) throw new Error(`App not found: ${args.app}`);
+const resolved = resolveHermesApp(args.app);
 
 const port = await pickPort(args.port);
 const profileDir = args.profileDir || fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-zh-runtime-'));
 fs.mkdirSync(profileDir, { recursive: true });
-const executable = appExecutable(args.app);
+const executable = appExecutable(resolved.app);
 const child = spawn(executable, [`--remote-debugging-port=${port}`], {
   env: {
     ...process.env,
@@ -447,7 +449,9 @@ try {
   scans.push(await scan(client, 'artifacts', () => client.evalValue(clickScript('产物|Artifacts')), 1000));
   const likelyUntranslated = summarize(scans, args.limit, { includeSkillContent: args.includeSkillContent });
   console.log(JSON.stringify({
-    app: args.app,
+    requestedApp: resolved.requested,
+    app: resolved.app,
+    redirected: resolved.redirected,
     includeSkillContent: args.includeSkillContent,
     port,
     profileDir,
@@ -467,7 +471,9 @@ try {
   if (likelyUntranslated.length > 0) process.exitCode = 1;
 } catch (error) {
   console.error(JSON.stringify({
-    app: args.app,
+    requestedApp: resolved.requested,
+    app: resolved.app,
+    redirected: resolved.redirected,
     port,
     profileDir,
     error: error.message,

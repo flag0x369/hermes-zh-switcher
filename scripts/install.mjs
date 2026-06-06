@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { appAsarPath, describeResolvedApp, resolveHermesApp } from './app-resolver.mjs';
 import {
   INDEX_PATH,
   UI_SCRIPT_PATH,
@@ -93,10 +94,6 @@ function assertNotRunning(appPath, force) {
   }
 }
 
-function appAsarPath(appPath) {
-  return path.join(appPath, 'Contents', 'Resources', 'app.asar');
-}
-
 function backupPathFor(appPath, asarHash) {
   const dir = path.join(os.homedir(), 'Library', 'Application Support', 'hermes-zh-switcher', 'backups');
   const appHash = sha256(Buffer.from(path.resolve(appPath))).slice(0, 12);
@@ -109,12 +106,18 @@ if (!args.yes && !args.dryRun) {
 }
 if (!fs.existsSync(args.app)) throw new Error(`App not found: ${args.app}`);
 if (!fs.existsSync(uiScriptPath)) throw new Error(`UI script not found: ${uiScriptPath}`);
-const targetApp = args.app;
+const resolved = resolveHermesApp(args.app);
+const targetApp = resolved.app;
 if (args.dryRun) {
   console.log(`[dry-run] would patch existing Hermes app in place: ${targetApp}`);
+  const note = describeResolvedApp(resolved);
+  if (note) console.log(`[dry-run] ${note}`);
   process.exit(0);
 }
+const note = describeResolvedApp(resolved);
+if (note) console.log(note);
 assertNotRunning(targetApp, args.force);
+if (resolved.redirected) assertNotRunning(resolved.requested, args.force);
 const asarPath = appAsarPath(targetApp);
 if (!fs.existsSync(asarPath)) throw new Error(`app.asar not found: ${asarPath}`);
 

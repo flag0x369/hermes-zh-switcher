@@ -2,6 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { appAsarPath, describeResolvedApp, resolveHermesApp } from './app-resolver.mjs';
 import {
   INDEX_PATH,
   UI_SCRIPT_PATH,
@@ -82,7 +83,9 @@ function assertNotRunning(appPath, force) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const asarPath = path.join(args.app, 'Contents', 'Resources', 'app.asar');
+const resolved = resolveHermesApp(args.app);
+const targetApp = resolved.app;
+const asarPath = appAsarPath(targetApp);
 if (!fs.existsSync(asarPath)) throw new Error(`app.asar not found: ${asarPath}`);
 
 const archive = readAsar(asarPath);
@@ -91,13 +94,18 @@ if (!hasInjection(archive)) {
   process.exit(0);
 }
 if (args.dryRun) {
-  console.log(`[dry-run] would uninstall Hermes zh switcher from: ${args.app}`);
+  console.log(`[dry-run] would uninstall Hermes zh switcher from: ${targetApp}`);
+  const note = describeResolvedApp(resolved);
+  if (note) console.log(`[dry-run] ${note}`);
   process.exit(0);
 }
 if (!args.yes) {
   throw new Error('Uninstall modifies the selected Hermes app bundle. Re-run with --yes after quitting Hermes.');
 }
-assertNotRunning(args.app, args.force);
+const note = describeResolvedApp(resolved);
+if (note) console.log(note);
+assertNotRunning(targetApp, args.force);
+if (resolved.redirected) assertNotRunning(resolved.requested, args.force);
 
 const originalAsar = fs.readFileSync(asarPath);
 try {
@@ -105,11 +113,11 @@ try {
   archive.files.set(INDEX_PATH, Buffer.from(removeIndexInjection(indexHtml), 'utf8'));
   archive.files.delete(UI_SCRIPT_PATH);
   packAsar(archive, asarPath);
-  signApp(args.app);
-  clearLaunchQuarantine(args.app);
-  verifySignature(args.app);
+  signApp(targetApp);
+  clearLaunchQuarantine(targetApp);
+  verifySignature(targetApp);
 } catch (error) {
-  restoreAsarAfterFailure(asarPath, args.app, originalAsar, error);
+  restoreAsarAfterFailure(asarPath, targetApp, originalAsar, error);
 }
 
-console.log(`Uninstalled Hermes zh switcher from: ${args.app}`);
+console.log(`Uninstalled Hermes zh switcher from: ${targetApp}`);

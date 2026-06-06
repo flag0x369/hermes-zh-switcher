@@ -4,11 +4,11 @@ Hermes Zh Switcher is an unofficial local UI patcher for Hermes Desktop on macOS
 
 ## What It Changes
 
-The installer patches the selected Hermes app in place:
+The installer patches the resolved Hermes Desktop app in place. On newer Hermes installers, `/Applications/Hermes.app` can be a setup launcher; in that case the scripts automatically patch the generated desktop app under `~/.hermes/hermes-agent/apps/desktop/release/*/Hermes.app`.
 
 | Target | Change |
 | --- | --- |
-| `/Applications/Hermes.app/Contents/Resources/app.asar` | Repacked after backup |
+| Resolved Hermes Desktop `Contents/Resources/app.asar` | Repacked after backup |
 | `dist/index.html` inside `app.asar` | Adds the `hermes-zh-switcher` injection marker |
 | `dist/hermes-zh-ui.js` inside `app.asar` | Adds the Chinese/English UI switcher script |
 | macOS code signature | Re-signs ad-hoc after local bundle modification |
@@ -16,7 +16,7 @@ The installer patches the selected Hermes app in place:
 ## What It Does Not Change
 
 - It does not create `/Applications/Hermes.zh.app`.
-- It does not modify `~/.hermes`.
+- It does not modify `~/.hermes` profiles, model config, Gateway config, credentials, or user data.
 - It does not modify profiles, model configuration, Gateway configuration, MCP config, tools, bots, knowledge bases, memories, or update branch config.
 - It does not read API keys, tokens, cookies, private keys, or passwords.
 - It does not translate environment variable names, config keys, model IDs, provider IDs, command names, URL examples, tool IDs, or skill IDs.

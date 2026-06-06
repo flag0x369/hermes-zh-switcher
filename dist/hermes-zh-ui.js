@@ -2,7 +2,7 @@ try {
   (function () {
     'use strict';
 
-    var VERSION = '0.6.0';
+    var VERSION = '0.6.1';
     var KEY = 'hermes.zh.ui.enabled';
     var OWNED = 'data-hermes-zh-owned';
     var DICT = new Map(Object.entries({
@@ -1333,6 +1333,7 @@ try {
       'Starting sign-in for': '正在启动登录：',
       'Starting update…': '正在开始更新...',
       'Stash': '暂存',
+      'steered': '已引导',
       'Stop listening and send': '停止收听并发送',
       'Stop the current turn before branching this chat.': '分支此聊天前请先停止当前轮次。',
       'StepFun Step Plan coding models': 'StepFun Step Plan 代码模型',

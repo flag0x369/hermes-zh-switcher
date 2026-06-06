@@ -23,7 +23,7 @@ This is an unofficial Hermes Desktop Chinese localization / UI switcher for user
 
 ## 30-Second Start
 
-This project does not distribute Hermes Desktop. Install Hermes from its official channel first, quit Hermes, then run:
+This project does not distribute Hermes Desktop. Install Hermes from its official channel first. On current Hermes builds, `/Applications/Hermes.app` may be a small setup launcher on first install; open Hermes once and finish the initial setup until the desktop UI appears, then quit Hermes and run:
 
 ```bash
 git clone https://github.com/flag0x369/hermes-zh-switcher.git
@@ -40,7 +40,7 @@ After installation, a `中/EN` switch appears in the lower-right corner of Herme
 
 | Area | Behavior |
 | --- | --- |
-| `/Applications/Hermes.app/Contents/Resources/app.asar` | Modified in place after backup |
+| Hermes Desktop `app.asar` | Modified in place after backup. If `/Applications/Hermes.app` is a setup launcher, scripts automatically patch the generated app under `~/.hermes/hermes-agent/apps/desktop/release/*/Hermes.app` |
 | `dist/index.html` inside `app.asar` | Receives a small script injection marker |
 | `dist/hermes-zh-ui.js` inside `app.asar` | Added as the UI switcher script |
 | `/Applications/Hermes.zh.app` | Not created |
@@ -132,6 +132,10 @@ Some text intentionally remains English:
 ### Hermes Is Running
 
 Quit Hermes before installing or uninstalling. Patching `app.asar` while the app is running can leave the bundle in an inconsistent state.
+
+### `app.asar not found`
+
+Open `/Applications/Hermes.app` once and finish Hermes' initial setup until the desktop UI appears, then quit Hermes and rerun the install command. New Hermes installers may first place a setup launcher in `/Applications`; the real patch target is generated under `~/.hermes/hermes-agent/apps/desktop/release/*/Hermes.app`.
 
 ### Chinese UI Disappears After Update
 

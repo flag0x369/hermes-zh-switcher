@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import path from 'node:path';
+import { appAsarPath, resolveHermesApp } from './app-resolver.mjs';
 import { INDEX_PATH, UI_SCRIPT_PATH, hasInjection, readAsar } from './asar-utils.mjs';
 
 function parseArgs(argv) {
@@ -25,7 +25,8 @@ function run(cmd, cmdArgs) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const asarPath = path.join(args.app, 'Contents', 'Resources', 'app.asar');
+const resolved = resolveHermesApp(args.app);
+const asarPath = appAsarPath(resolved.app);
 if (!fs.existsSync(asarPath)) throw new Error(`app.asar not found: ${asarPath}`);
 
 const archive = readAsar(asarPath);
@@ -34,11 +35,13 @@ const index = archive.files.get(INDEX_PATH)?.toString('utf8') || '';
 const script = archive.files.get(UI_SCRIPT_PATH);
 const version = script?.toString('utf8').match(/\bvar VERSION = ['"]([^'"]+)['"]/)?.[1] || null;
 const signature = process.platform === 'darwin'
-  ? run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', args.app])
+  ? run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', resolved.app])
   : { ok: true, output: 'not macOS' };
 
 console.log(JSON.stringify({
-  app: args.app,
+  requestedApp: resolved.requested,
+  app: resolved.app,
+  redirected: resolved.redirected,
   installed,
   indexHasMarker: index.includes('hermes-zh-switcher:start'),
   version,

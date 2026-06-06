@@ -283,6 +283,7 @@ const samples = [
   ['output', '输出'],
   ['Status, logs, and system actions', '状态、日志和系统操作'],
   ['Active sessions 0', '活跃会话 0'],
+  ['steered', '已引导'],
   ['LINE', 'LINE'],
   ['Enable WhatsApp', '启用 WhatsApp'],
   ['Use Hermes through the bundled WhatsApp bridge with QR-based auth.', '通过内置 WhatsApp 桥接使用 Hermes，并用二维码认证。'],

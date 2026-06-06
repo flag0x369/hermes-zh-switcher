@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { appAsarPath, resolveHermesApp } from './app-resolver.mjs';
 import { hasInjection, readAsar } from './asar-utils.mjs';
 
 function parseArgs(argv) {
@@ -23,10 +24,6 @@ function parseArgs(argv) {
     }
   }
   return args;
-}
-
-function appAsarPath(appPath) {
-  return path.join(appPath, 'Contents', 'Resources', 'app.asar');
 }
 
 function appExecutable(appPath) {
@@ -246,11 +243,12 @@ async function checkToggle(appPath, port, timeoutMs) {
 
 const args = parseArgs(process.argv.slice(2));
 assert(fs.existsSync(args.app), `App not found: ${args.app}`);
+const resolved = resolveHermesApp(args.app);
 
-const archive = readAsar(appAsarPath(args.app));
+const archive = readAsar(appAsarPath(resolved.app));
 assert(hasInjection(archive), 'Hermes app is missing zh switcher injection');
 
-const signature = verifySignature(args.app);
+const signature = verifySignature(resolved.app);
 assert(signature.ok, `Hermes app signature invalid: ${signature.output}`);
 
 const updater = checkUpdaterStatus(args);
@@ -259,9 +257,11 @@ if (updater && !updater.ok) {
 }
 
 const port = await pickPort(args.port);
-const toggle = await checkToggle(args.app, port, args.timeoutMs);
+const toggle = await checkToggle(resolved.app, port, args.timeoutMs);
 console.log(JSON.stringify({
-  app: args.app,
+  requestedApp: resolved.requested,
+  app: resolved.app,
+  redirected: resolved.redirected,
   patchedInstalled: true,
   signatureOk: signature.ok,
   signatureOutput: signature.output.split('\n').slice(-2).join('\n'),

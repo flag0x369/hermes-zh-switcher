@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { appAsarPath, resolveHermesApp } from './app-resolver.mjs';
 import { readAsar } from './asar-utils.mjs';
 
 function parseArgs(argv) {
@@ -108,7 +109,8 @@ function forEachQuotedString(source, cb) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const asarPath = path.join(args.app, 'Contents', 'Resources', 'app.asar');
+const resolved = resolveHermesApp(args.app);
+const asarPath = appAsarPath(resolved.app);
 if (!fs.existsSync(asarPath)) throw new Error(`app.asar not found: ${asarPath}`);
 
 const dictKeys = loadDictionaryKeys();
@@ -160,7 +162,9 @@ forEachQuotedString(js, (raw) => {
 
 const rows = [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 console.log(JSON.stringify({
-  app: args.app,
+  requestedApp: resolved.requested,
+  app: resolved.app,
+  redirected: resolved.redirected,
   likelyUntranslatedCount: rows.length,
   likelyUntranslated: rows.slice(0, args.limit).map(([text, count]) => ({ text, count }))
 }, null, 2));
