@@ -10,7 +10,7 @@ This is an unofficial Hermes Desktop Chinese localization / UI switcher for user
 ![Safety](https://img.shields.io/badge/safety-backup_%2B_restore-7C3AED.svg)
 ![License](https://img.shields.io/badge/license-MIT-0F766E.svg)
 
-![Hermes Zh Switcher UI effect comparison](docs/assets/hermes-zh-switcher-before-after.svg)
+![Hermes 中文 UI 切换器安装效果对比](docs/assets/hermes-zh-switcher-before-after.svg)
 
 ## What It Solves
 
