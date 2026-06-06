@@ -1,0 +1,48 @@
+name: Translation request
+description: Suggest a missing or better Simplified Chinese UI translation.
+title: "[Translation]: "
+labels:
+  - translation
+body:
+  - type: textarea
+    id: original
+    attributes:
+      label: Original UI text
+      description: Paste the English UI text. Keep technical IDs, commands, paths, and config keys unchanged.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested Chinese translation
+      render: text
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it appear?
+      options:
+        - Settings
+        - Skills & Tools
+        - Model/provider setup
+        - Messaging connector
+        - Installer/update screen
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Add surrounding UI context after removing private information.
+    validations:
+      required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed tokens, cookies, account names, private paths, profile names, and raw screenshots.
+          required: true

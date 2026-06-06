@@ -3,6 +3,32 @@
   "version": "0.6.0",
   "description": "Chinese/English UI switcher installer for Hermes Desktop.",
   "type": "module",
+  "keywords": [
+    "hermes-desktop",
+    "zh-cn",
+    "i18n",
+    "localization",
+    "macos",
+    "electron",
+    "app-asar",
+    "developer-tools"
+  ],
+  "homepage": "https://github.com/flag0x369/hermes-zh-switcher#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flag0x369/hermes-zh-switcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/flag0x369/hermes-zh-switcher/issues"
+  },
+  "files": [
+    "dist/",
+    "scripts/",
+    "docs/SAFETY.md",
+    "docs/ROADMAP.md",
+    "docs/SCREENSHOTS.md",
+    "docs/RELEASE_TEMPLATE.md"
+  ],
   "bin": {
     "hermes-zh-install": "./scripts/install.mjs",
     "hermes-zh-uninstall": "./scripts/uninstall.mjs",

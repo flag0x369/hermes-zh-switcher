@@ -1,0 +1,54 @@
+name: Bug report
+description: Report an install, uninstall, update, verify, signing, or translation problem.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please remove tokens, cookies, account names, private paths, profile names, and raw screenshots before posting.
+  - type: input
+    id: hermes-version
+    attributes:
+      label: Hermes Desktop version
+      placeholder: "For example: 0.15.1"
+    validations:
+      required: false
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      placeholder: "For example: macOS 15.x"
+    validations:
+      required: false
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: Which command did you run?
+      render: shell
+      placeholder: "node scripts/install.mjs --app /Applications/Hermes.app --yes"
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: Paste relevant output after redaction.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed tokens, cookies, API keys, account names, private paths, profile names, and raw screenshots.
+          required: true

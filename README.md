@@ -1,66 +1,86 @@
-# Hermes 中文切换器
+# Hermes Zh Switcher / Hermes 中文 UI 切换器
 
-给 Hermes Desktop 安装一个可关闭的中文 UI 层。它只修改本机已安装 Hermes app 里的前端 `app.asar`，不修改 Hermes 后端、模型请求、API Key、本地记忆、知识库、机器人、Gateway、MCP 或工具调用逻辑。
+Hermes Zh Switcher 是一个非官方的 Hermes Desktop 中文 UI 切换器和本地安装器，用来给 macOS 上已有的 Hermes app 增加可关闭的中文界面层。它只向 Hermes Desktop 前端 `app.asar` 注入可卸载的 UI 脚本，不修改 Hermes 后端、模型请求、API Key、本地记忆、知识库、机器人、Gateway、MCP 或工具调用逻辑。
 
-这不是 Hermes 官方插件。Hermes Desktop 目前没有稳定的全局 i18n 插件接口，所以本项目提供的是本地 UI 补丁安装器。
+This is an unofficial Hermes Desktop Chinese localization / UI switcher for users searching for Hermes 中文化, Hermes Desktop zh-CN, macOS app.asar UI patching, and reversible local i18n overlays.
 
-## 安装方式
+![Unofficial](https://img.shields.io/badge/Hermes-unofficial-111827.svg)
+![macOS](https://img.shields.io/badge/platform-macOS-2563EB.svg)
+![Node](https://img.shields.io/badge/node-%3E%3D20-16A34A.svg)
+![Safety](https://img.shields.io/badge/safety-backup_%2B_restore-7C3AED.svg)
+![License](https://img.shields.io/badge/license-MIT-0F766E.svg)
 
-本项目不分发 Hermes Desktop 本体。请先从 Hermes 官方渠道安装 Hermes，然后在本机现有 Hermes 上安装汉化补丁：
+## What It Solves
+
+| Problem | What this project does |
+| --- | --- |
+| Hermes Desktop UI is mostly English | Adds a Chinese/English `中/EN` toggle in the renderer UI |
+| There is no stable official global i18n plugin API | Uses a local, reversible `app.asar` UI injection |
+| Users worry about app/data safety | Backs up `app.asar`, supports uninstall, and avoids user data/config |
+| Hermes updates may overwrite local patches | Provides an update helper: uninstall patch -> run upstream update -> reinstall patch -> verify |
+
+## 30-Second Start
+
+This project does not distribute Hermes Desktop. Install Hermes from its official channel first, quit Hermes, then run:
 
 ```bash
-git clone <你的仓库地址>
+git clone https://github.com/flag0x369/hermes-zh-switcher.git
 cd hermes-zh-switcher
 npm run check
+node scripts/install.mjs --app /Applications/Hermes.app --dry-run
 node scripts/install.mjs --app /Applications/Hermes.app --yes
 open -n /Applications/Hermes.app
 ```
 
-安装后右下角会出现 `中/EN` 切换按钮。
+After installation, a `中/EN` switch appears in the lower-right corner of Hermes Desktop.
 
-## 重要安全边界
+## Safety Scope
 
-- 不创建 `/Applications/Hermes.zh.app` 或任何第二个 Hermes app。
-- 不修改 `~/.hermes`、profiles、API key、模型配置、Gateway 配置、更新分支配置或用户数据。
-- 不翻译环境变量名、配置 key、工具 ID、技能包 ID、命令名、模型名、服务商名、URL 示例和 token 示例。
-- 安装器会备份修改前的 `app.asar` 到 `~/Library/Application Support/hermes-zh-switcher/backups/`。
-- 如果写入、签名或注入校验失败，安装器会自动恢复本次修改前的 `app.asar`。
-- macOS 上修改 app bundle 后会重新 ad-hoc 签名。Apple notarization 不会被保留，这是本地补丁的正常限制。
+| Area | Behavior |
+| --- | --- |
+| `/Applications/Hermes.app/Contents/Resources/app.asar` | Modified in place after backup |
+| `dist/index.html` inside `app.asar` | Receives a small script injection marker |
+| `dist/hermes-zh-ui.js` inside `app.asar` | Added as the UI switcher script |
+| `/Applications/Hermes.zh.app` | Not created |
+| `~/.hermes`, profiles, model config, Gateway config | Not modified |
+| API keys, tokens, cookies, credentials | Not read |
+| Environment variables, config keys, model IDs, tool IDs | Preserved in English |
+| macOS signing | Re-signed ad-hoc after local bundle modification |
 
-## 更新 Hermes
+Read the longer safety notes in [docs/SAFETY.md](docs/SAFETY.md).
 
-推荐用本项目提供的更新 helper：
+## Commands
+
+### Verify Current Install
 
 ```bash
-node scripts/update-hermes.mjs --app /Applications/Hermes.app --yes
+node scripts/verify.mjs --app /Applications/Hermes.app
 ```
 
-它会按顺序执行：
-
-1. 卸载中文 UI 注入
-2. 运行官方 `hermes update --yes`
-3. 重新安装中文 UI 注入
-4. 验证补丁状态
-
-如果你直接使用 Hermes 自带更新功能，更新不会被汉化补丁阻断；但上游更新可能覆盖 `app.asar`，导致中文按钮消失。更新后重新运行安装命令即可。
-
-## 卸载
+### Uninstall
 
 ```bash
 node scripts/uninstall.mjs --app /Applications/Hermes.app --yes
 ```
 
-卸载只移除 `dist/index.html` 里的注入标记和 `dist/hermes-zh-ui.js`，不会删除 Hermes 或用户数据。
+Uninstall removes the injection marker and `dist/hermes-zh-ui.js` from `app.asar`. It does not delete Hermes or user data.
 
-## 验证
+### Update Hermes Safely
 
 ```bash
-node scripts/verify.mjs --app /Applications/Hermes.app
-npm run safety:check
-npm run audit:runtime -- --limit 220
+node scripts/update-hermes.mjs --app /Applications/Hermes.app --yes
 ```
 
-如果只想查看将要发生什么，可以使用 dry-run：
+The helper runs this sequence:
+
+1. Uninstall the Chinese UI injection.
+2. Run upstream `hermes update --yes`.
+3. Reinstall the Chinese UI injection.
+4. Verify the patch state.
+
+If you use Hermes' native updater directly, the update should not be blocked. The patch may disappear because upstream replaces `app.asar`; rerun the install command afterward.
+
+### Dry Run
 
 ```bash
 node scripts/install.mjs --app /Applications/Hermes.app --dry-run
@@ -68,55 +88,97 @@ node scripts/uninstall.mjs --app /Applications/Hermes.app --dry-run
 node scripts/update-hermes.mjs --app /Applications/Hermes.app --dry-run
 ```
 
-## 常见问题
-
-### 安装时报 Hermes 正在运行
-
-请先退出 Hermes。补丁会改写 app bundle 里的 `app.asar`，运行中修改容易造成状态不一致。
-
-### 更新后中文不见了
-
-这是预期情况。Hermes 更新会替换前端 bundle，重新运行：
-
-```bash
-node scripts/install.mjs --app /Applications/Hermes.app --yes
-```
-
-### macOS 提示签名或来源变化
-
-本地修改 app bundle 后必须重新签名，本项目使用 ad-hoc 签名。公开分发时建议只分发本补丁安装器，不要分发修改后的 Hermes app。
-
-### 哪些英文会保留
-
-会保留技术标识和品牌名，例如 `OPENAI_API_KEY`、`API_SERVER_KEY`、`AGENT_BROWSER_ENGINE`、`MCP`、`OAuth`、`Token`、`DeepSeek`、`DashScope`、`Hugging Face`、`Slack`、`WhatsApp`、`LINE`、模型名、命令名、URL 示例和技能/工具 ID。
-
-## 开发验证
+## Verification
 
 ```bash
 npm run check
-node scripts/install.mjs --app /Applications/Hermes.app --yes
+node scripts/verify.mjs --app /Applications/Hermes.app
 npm run safety:check
 npm run audit:runtime -- --limit 220
-node scripts/uninstall.mjs --app /Applications/Hermes.app --yes
 ```
 
-发布前建议至少跑：
+Release/package checks:
 
 ```bash
 npm run check
+npm pack --dry-run
 node scripts/install.mjs --app /Applications/Hermes.app --dry-run
 node scripts/update-hermes.mjs --app /Applications/Hermes.app --dry-run
+```
+
+The old copy-install route is intentionally rejected:
+
+```bash
 node scripts/install.mjs --app /Applications/Hermes.app --copy /tmp/Hermes.zh.app --dry-run
 ```
 
-最后一条应失败，并提示 copy install 已不再支持。
+That command should fail before modifying files.
 
-## 长期稳定性
+## Translation Coverage
 
-不能承诺永远兼容未来 Hermes 版本。Hermes Desktop 的前端 bundle 文件名、`index.html` 结构、Electron 打包方式都可能变化。本项目会在结构不匹配时失败并报错，而不是猜测修改。
+The UI script translates common Hermes Desktop labels, settings, setup screens, tool sections, model/provider controls, messaging connector labels, and installer/update states.
 
-真正长期稳定的方案是 Hermes 官方提供 Desktop i18n 支持。
+Some text intentionally remains English:
 
-## 许可证
+- Brand names: `OpenAI`, `Claude`, `Slack`, `WhatsApp`, `Hugging Face`
+- Model/provider names and technical terms: `MCP`, `OAuth`, `Token`, `API Key`
+- Commands, URLs, paths, environment variables, config keys, tool IDs, skill IDs
+- User-generated content, chat messages, terminal output, code, markdown, logs
+
+## Troubleshooting
+
+### Hermes Is Running
+
+Quit Hermes before installing or uninstalling. Patching `app.asar` while the app is running can leave the bundle in an inconsistent state.
+
+### Chinese UI Disappears After Update
+
+Hermes updates can replace `app.asar`. Reinstall the patch:
+
+```bash
+node scripts/install.mjs --app /Applications/Hermes.app --yes
+```
+
+### macOS Reports Signing Or Source Changes
+
+Local `app.asar` modification changes the app bundle. This project re-signs the selected app ad-hoc so it can launch locally. Apple notarization is not preserved after local patching; that is a normal limitation of this approach.
+
+### Installer Fails
+
+The installer backs up the original `app.asar` before writing and attempts rollback if writing, signing, or injection verification fails. Backups are stored under:
+
+```text
+~/Library/Application Support/hermes-zh-switcher/backups/
+```
+
+## Project Docs
+
+- [docs/SAFETY.md](docs/SAFETY.md): write scope, backups, restore, and sensitive-data boundary.
+- [docs/ROADMAP.md](docs/ROADMAP.md): supported, near-term, and not-planned work.
+- [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md): public screenshot and redaction rules.
+- [docs/RELEASE_TEMPLATE.md](docs/RELEASE_TEMPLATE.md): release notes template.
+- [CONTRIBUTING.md](CONTRIBUTING.md): contribution scope and verification checklist.
+
+## GitHub Metadata
+
+Suggested description:
+
+```text
+Unofficial Chinese UI switcher and reversible local app.asar patcher for Hermes Desktop on macOS.
+```
+
+Suggested topics:
+
+```text
+hermes-desktop, zh-cn, i18n, localization, macos, electron, app-asar, developer-tools
+```
+
+## Long-Term Stability
+
+This project cannot guarantee compatibility with every future Hermes Desktop version. Hermes may change frontend bundle names, `index.html` shape, Electron packaging, or update behavior. The installer and verifier should fail loudly when structure does not match instead of guessing.
+
+The best long-term solution is official Hermes Desktop i18n support.
+
+## License
 
 MIT
