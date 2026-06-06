@@ -4,6 +4,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .DS_Store
+.env
+.env.*
+*.pem
+*.key
 *.asar
 *.app/
 backups/

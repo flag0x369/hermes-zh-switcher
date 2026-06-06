@@ -95,7 +95,7 @@ const samples = [
   ['Loading providers...', '正在加载服务商...'],
   ['Starting sign-in for', '正在启动登录：'],
   ['Starting sign-in for OpenAI', '正在为 OpenAI 启动登录'],
-  ['Defaults to /Users/example/hermes-projects.', '默认为 /Users/example/hermes-projects。'],
+  ['Defaults to /path/to/hermes-projects.', '默认为 /path/to/hermes-projects。'],
   ['Allow Private URLs', '允许私有 URL'],
   ['Approval Mode', '审批模式'],
   ['Auto-Compression', '自动压缩'],
