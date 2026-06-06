@@ -1,7 +1,7 @@
 {
   "name": "hermes-zh-switcher",
   "version": "0.6.1",
-  "description": "Chinese/English UI switcher installer for Hermes Desktop.",
+  "description": "Unofficial Chinese/English UI switcher and reversible local app.asar patcher for Hermes Desktop on macOS.",
   "type": "module",
   "keywords": [
     "hermes-desktop",
@@ -22,6 +22,7 @@
     "url": "https://github.com/flag0x369/hermes-zh-switcher/issues"
   },
   "files": [
+    "README.en.md",
     "dist/",
     "scripts/",
     "docs/SAFETY.md",
