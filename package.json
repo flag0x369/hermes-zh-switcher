@@ -27,7 +27,8 @@
     "docs/SAFETY.md",
     "docs/ROADMAP.md",
     "docs/SCREENSHOTS.md",
-    "docs/RELEASE_TEMPLATE.md"
+    "docs/RELEASE_TEMPLATE.md",
+    "docs/assets/"
   ],
   "bin": {
     "hermes-zh-install": "./scripts/install.mjs",

@@ -4,6 +4,7 @@ Use this guide for public README screenshots and release assets.
 
 ## Recommended Shots
 
+- The generated before/after comparison graphic in `docs/assets/hermes-zh-switcher-before-after.svg`.
 - Before/after Hermes Desktop settings page.
 - Before/after Skills & Tools page.
 - The `中/EN` switch in the lower-right corner.
@@ -22,6 +23,7 @@ Do not publish raw screenshots. Remove or crop:
 ## File Guidance
 
 - Prefer PNG or WebP.
+- SVG comparison graphics are acceptable when they avoid private UI content.
 - Keep README image width around 1200-1600px.
 - Use descriptive names, for example `docs/assets/hermes-settings-zh.png`.
 - Do not commit original raw screenshots.
