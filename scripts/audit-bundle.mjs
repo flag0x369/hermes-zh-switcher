@@ -31,19 +31,41 @@ function decodeLiteral(s) {
 function loadDictionaryKeys() {
   const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
   const source = fs.readFileSync(path.join(rootDir, 'dist', 'hermes-zh-ui.js'), 'utf8');
-  return new Set(
-    [...source.matchAll(/^\s*(['"])(.*?)\1:\s*/gm)]
-      .map((match) => match[2].replace(/\\'/g, "'").replace(/\\"/g, '"'))
-  );
+  const keys = [...source.matchAll(/^\s*(['"])(.*?)\1:\s*/gm)]
+    .map((match) => match[2].replace(/\\'/g, "'").replace(/\\"/g, '"'));
+  return new Set([...keys, ...keys.map((key) => key.toLowerCase())]);
+}
+
+function stripExpectedEnglish(s) {
+  return String(s || '')
+    .replace(/[\u3400-\u9fff\uf900-\ufaff]/g, ' ')
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/\b(Hermes|Agent|Desktop|OpenAI|Nous|Portal|DashScope|Qwen|AWS|Arcee|Xiaomi|MiMo|Hugging|Face|router\.huggingface\.co|ollama\.com|GMI|Cloud|GPU|StepFun|Step|Plan|Slack|Discord|Telegram|WhatsApp|Signal|Matrix|Mattermost|BlueBubbles|iMessage|QQ|WeCom|Bot|MCP|API|Key|URL|Token|ID|AppID|Corp|AES|OAuth|Permissions|Socket|Mode|GitHub|GitLab|OpenWebUI|LobeChat|YOLO|SOUL\.md|PR|TUI|CLI|Gateway|Gateway|profile|profiles|branch|commit|diff|host|port|space|auth|key|secret|token|bot|app|user|users|channel|channels|home|thread|off|stash|discard)\b/gi, ' ')
+    .replace(/\b[A-Z_]{2,}\b/g, ' ')
+    .replace(/\b[a-z0-9]+(?:[_-][a-z0-9]+)+\b/gi, ' ')
+    .replace(/\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b/gi, ' ')
+    .replace(/[\d\s.,:;()[\]{}"'’‘“”_+\-—·/\\<>|@#$%^&*=!?`~]+/g, ' ');
 }
 
 function isExpectedEnglish(s) {
+  if (/[\u3400-\u9fff\uf900-\ufaff]/.test(s) && !/[A-Za-z]{2,}/.test(stripExpectedEnglish(s))) return true;
   return [
     /^(Discord|Slack|Telegram|Signal|WhatsApp|Matrix|OpenAI|OpenRouter|Nous|Nous Portal|MiniMax|Qwen Code|xAI Grok|Anthropic|Claude|SOUL\.md|MCP|API Key|HERMES AGENT|GPT|Pro|Free tier|Free|Medium|High|Low|Default|Custom|Fixed|Cyberpunk|Ember|Midnight|Mono|Slate|mermaid|filesystem|file-tree|stderr|stdout|root|my-profile)$/i,
     /^\/[a-z0-9_.-]+$/i,
+    /^\d+:[A-Z0-9._-]+(?:\.\.\.)?$/i,
+    /^https?:\/\/\S+$/i,
     /^(hermes tools)$/i,
     /(token|URL|API|OAuth|OpenAI|Hermes|MCP|SOUL\.md|endpoint|vLLM|llama\.cpp|Ollama|ChatGPT|Gemini|Grok|LaTeX|\\|xapp-|xoxb-|LOCALAPPDATA|\.env|\.yaml|\.local|@file|@folder|@hermes|\/help|\/skin)/,
     /^(backdrop|blend|brightness|invert color|position|radius scalar|saturate|value|children|height \(dvh\))$/
+  ].some((pattern) => pattern.test(s));
+}
+
+function isCoveredByDynamicRule(s) {
+  return [
+    /^Advanced\s+\(\d+\)$/i,
+    /^Paste\s+.+?\s+(key|token)$/i,
+    /^Last checked .+$/i,
+    /^Loading .+$/i
   ].some((pattern) => pattern.test(s));
 }
 
@@ -102,7 +124,7 @@ const re = /(?:label|title|description|placeholder|message|body|headline|childre
 const counts = new Map();
 function addCandidate(rawText) {
   const s = decodeLiteral(rawText).replace(/\s+/g, ' ').trim();
-  if (isLikelyUiString(s) && !dictKeys.has(s)) {
+  if (isLikelyUiString(s) && !dictKeys.has(s) && !dictKeys.has(s.toLowerCase()) && !isCoveredByDynamicRule(s)) {
     counts.set(s, (counts.get(s) || 0) + 1);
   }
 }

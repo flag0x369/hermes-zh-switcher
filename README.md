@@ -1,78 +1,121 @@
 # Hermes 中文切换器
 
-给 Hermes Desktop 加一个可关闭的中文 UI 层。它只改桌面端前端资源，不改 Hermes 后端、模型请求、API Key、本地记忆、知识库、机器人或工具逻辑。
+给 Hermes Desktop 安装一个可关闭的中文 UI 层。它只修改本机已安装 Hermes app 里的前端 `app.asar`，不修改 Hermes 后端、模型请求、API Key、本地记忆、知识库、机器人、Gateway、MCP 或工具调用逻辑。
 
-## 重要说明
+这不是 Hermes 官方插件。Hermes Desktop 目前没有稳定的全局 i18n 插件接口，所以本项目提供的是本地 UI 补丁安装器。
 
-这不是 Hermes 官方插件。Hermes 当前官方插件主要面向 CLI/Gateway/Web Dashboard；Dashboard 插件可以新增 tab、slot 和本地 API，但不能稳定接管 Desktop App 的全局界面文案。
+## 安装方式
 
-所以本项目采用的是开源补丁安装器：
-
-- 默认创建副本，例如 `/Applications/Hermes.zh.app`
-- 原版 `/Applications/Hermes.app` 不会被修改
-- `--in-place --yes` 只用于更新增强版副本，不用于 patch 原版
-- 安装器会备份原始 `app.asar`
-- macOS 上会自动重新 ad-hoc 签名
-- UI 右下角提供 `中/EN` 切换按钮
-
-## 安装到副本
+本项目不分发 Hermes Desktop 本体。请先从 Hermes 官方渠道安装 Hermes，然后在本机现有 Hermes 上安装汉化补丁：
 
 ```bash
-git clone <你的私有仓库地址>
+git clone <你的仓库地址>
 cd hermes-zh-switcher
 npm run check
-node scripts/install.mjs --app /Applications/Hermes.app --copy /Applications/Hermes.zh.app
-open -n /Applications/Hermes.zh.app
+node scripts/install.mjs --app /Applications/Hermes.app --yes
+open -n /Applications/Hermes.app
 ```
 
-## 更新增强版副本
+安装后右下角会出现 `中/EN` 切换按钮。
 
-如果 `/Applications/Hermes.zh.app` 已经存在，可以直接更新增强版副本：
+## 重要安全边界
+
+- 不创建 `/Applications/Hermes.zh.app` 或任何第二个 Hermes app。
+- 不修改 `~/.hermes`、profiles、API key、模型配置、Gateway 配置、更新分支配置或用户数据。
+- 不翻译环境变量名、配置 key、工具 ID、技能包 ID、命令名、模型名、服务商名、URL 示例和 token 示例。
+- 安装器会备份修改前的 `app.asar` 到 `~/Library/Application Support/hermes-zh-switcher/backups/`。
+- 如果写入、签名或注入校验失败，安装器会自动恢复本次修改前的 `app.asar`。
+- macOS 上修改 app bundle 后会重新 ad-hoc 签名。Apple notarization 不会被保留，这是本地补丁的正常限制。
+
+## 更新 Hermes
+
+推荐用本项目提供的更新 helper：
 
 ```bash
-node scripts/install.mjs --app /Applications/Hermes.zh.app --in-place --yes
+node scripts/update-hermes.mjs --app /Applications/Hermes.app --yes
 ```
 
-安装器会拒绝对 `/Applications/Hermes.app` 执行 in-place patch，避免误改原版。
+它会按顺序执行：
+
+1. 卸载中文 UI 注入
+2. 运行官方 `hermes update --yes`
+3. 重新安装中文 UI 注入
+4. 验证补丁状态
+
+如果你直接使用 Hermes 自带更新功能，更新不会被汉化补丁阻断；但上游更新可能覆盖 `app.asar`，导致中文按钮消失。更新后重新运行安装命令即可。
 
 ## 卸载
 
 ```bash
-node scripts/uninstall.mjs --app /Applications/Hermes.zh.app
+node scripts/uninstall.mjs --app /Applications/Hermes.app --yes
 ```
 
-不要对原版 `/Applications/Hermes.app` 执行卸载或安装操作；原版默认应保持未注入状态。
+卸载只移除 `dist/index.html` 里的注入标记和 `dist/hermes-zh-ui.js`，不会删除 Hermes 或用户数据。
 
 ## 验证
 
 ```bash
-node scripts/verify.mjs --app /Applications/Hermes.zh.app
+node scripts/verify.mjs --app /Applications/Hermes.app
+npm run safety:check
+npm run audit:runtime -- --limit 220
 ```
 
-## 翻译覆盖审计
-
-用原版 Hermes bundle 扫描可能漏翻的 UI 文案：
+如果只想查看将要发生什么，可以使用 dry-run：
 
 ```bash
-npm run audit:app
+node scripts/install.mjs --app /Applications/Hermes.app --dry-run
+node scripts/uninstall.mjs --app /Applications/Hermes.app --dry-run
+node scripts/update-hermes.mjs --app /Applications/Hermes.app --dry-run
 ```
 
-当前版本会保留代码、命令、路径、模型名、平台名、API 名、token 示例和 Hermes 专有名词。审计输出里的 `123456:ABC...`、`hermes tools` 这类内容属于预期保留。
+## 常见问题
+
+### 安装时报 Hermes 正在运行
+
+请先退出 Hermes。补丁会改写 app bundle 里的 `app.asar`，运行中修改容易造成状态不一致。
+
+### 更新后中文不见了
+
+这是预期情况。Hermes 更新会替换前端 bundle，重新运行：
+
+```bash
+node scripts/install.mjs --app /Applications/Hermes.app --yes
+```
+
+### macOS 提示签名或来源变化
+
+本地修改 app bundle 后必须重新签名，本项目使用 ad-hoc 签名。公开分发时建议只分发本补丁安装器，不要分发修改后的 Hermes app。
+
+### 哪些英文会保留
+
+会保留技术标识和品牌名，例如 `OPENAI_API_KEY`、`API_SERVER_KEY`、`AGENT_BROWSER_ENGINE`、`MCP`、`OAuth`、`Token`、`DeepSeek`、`DashScope`、`Hugging Face`、`Slack`、`WhatsApp`、`LINE`、模型名、命令名、URL 示例和技能/工具 ID。
+
+## 开发验证
+
+```bash
+npm run check
+node scripts/install.mjs --app /Applications/Hermes.app --yes
+npm run safety:check
+npm run audit:runtime -- --limit 220
+node scripts/uninstall.mjs --app /Applications/Hermes.app --yes
+```
+
+发布前建议至少跑：
+
+```bash
+npm run check
+node scripts/install.mjs --app /Applications/Hermes.app --dry-run
+node scripts/update-hermes.mjs --app /Applications/Hermes.app --dry-run
+node scripts/install.mjs --app /Applications/Hermes.app --copy /tmp/Hermes.zh.app --dry-run
+```
+
+最后一条应失败，并提示 copy install 已不再支持。
 
 ## 长期稳定性
 
-不能承诺“永远不会受版本更新影响”。原因是 Hermes Desktop 的前端 bundle 文件名、`index.html` 结构、Electron 打包方式都可能变化。
+不能承诺永远兼容未来 Hermes 版本。Hermes Desktop 的前端 bundle 文件名、`index.html` 结构、Electron 打包方式都可能变化。本项目会在结构不匹配时失败并报错，而不是猜测修改。
 
-本项目尽量降低更新风险：
-
-- 注入点使用 `</head>`，不依赖固定 bundle 文件名
-- 多次运行不会重复注入
-- 中文脚本包在 `try/catch` 中，失败时不会阻止 Hermes 主应用加载
-- 运行时会处理常见拆分文本、斜杠菜单说明和动态状态句式
-- 不修改模型、记忆、知识库、机器人、MCP、工具调用逻辑
-- 版本更新后可重新运行安装器
-
-真正长期稳定的方案是给 Hermes 官方源码提交 i18n 支持。
+真正长期稳定的方案是 Hermes 官方提供 Desktop i18n 支持。
 
 ## 许可证
 

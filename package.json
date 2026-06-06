@@ -1,22 +1,23 @@
 {
   "name": "hermes-zh-switcher",
-  "version": "0.5.9",
+  "version": "0.6.0",
   "description": "Chinese/English UI switcher installer for Hermes Desktop.",
   "type": "module",
   "bin": {
     "hermes-zh-install": "./scripts/install.mjs",
     "hermes-zh-uninstall": "./scripts/uninstall.mjs",
-    "hermes-zh-verify": "./scripts/verify.mjs"
+    "hermes-zh-verify": "./scripts/verify.mjs",
+    "hermes-zh-update": "./scripts/update-hermes.mjs"
   },
   "scripts": {
-    "check": "node --check scripts/install.mjs && node --check scripts/uninstall.mjs && node --check scripts/verify.mjs && node --check scripts/check-dictionary.mjs && node --check scripts/audit-bundle.mjs && node --check scripts/audit-runtime.mjs && node --check scripts/safety-check.mjs && node --check dist/hermes-zh-ui.js && node scripts/check-dictionary.mjs",
+    "check": "node --check scripts/install.mjs && node --check scripts/uninstall.mjs && node --check scripts/verify.mjs && node --check scripts/update-hermes.mjs && node --check scripts/check-dictionary.mjs && node --check scripts/audit-bundle.mjs && node --check scripts/audit-runtime.mjs && node --check scripts/safety-check.mjs && node --check dist/hermes-zh-ui.js && node scripts/check-dictionary.mjs",
     "audit:app": "node scripts/audit-bundle.mjs --app /Applications/Hermes.app",
-    "audit:runtime": "node scripts/audit-runtime.mjs --app /Applications/Hermes.zh.app",
-    "safety:check": "node scripts/safety-check.mjs --app /Applications/Hermes.zh.app --original /Applications/Hermes.app",
-    "verify:zh-app": "node scripts/verify.mjs --app /Applications/Hermes.zh.app",
-    "install:copy": "node scripts/install.mjs --app /Applications/Hermes.app --copy /Applications/Hermes.zh.app",
-    "install:in-place": "node scripts/install.mjs --app /Applications/Hermes.zh.app --in-place --yes",
-    "uninstall:zh-app": "node scripts/uninstall.mjs --app /Applications/Hermes.zh.app"
+    "audit:runtime": "node scripts/audit-runtime.mjs --app /Applications/Hermes.app",
+    "safety:check": "node scripts/safety-check.mjs --app /Applications/Hermes.app",
+    "verify:app": "node scripts/verify.mjs --app /Applications/Hermes.app",
+    "install:app": "node scripts/install.mjs --app /Applications/Hermes.app --yes",
+    "uninstall:app": "node scripts/uninstall.mjs --app /Applications/Hermes.app --yes",
+    "update:hermes": "node scripts/update-hermes.mjs --app /Applications/Hermes.app --yes"
   },
   "license": "MIT",
   "engines": {

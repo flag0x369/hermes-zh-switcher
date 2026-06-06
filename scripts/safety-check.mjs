@@ -7,15 +7,16 @@ import path from 'node:path';
 import { hasInjection, readAsar } from './asar-utils.mjs';
 
 function parseArgs(argv) {
-  const args = { app: '/Applications/Hermes.zh.app', original: '/Applications/Hermes.app', port: 0, timeoutMs: 60000 };
+  const args = { app: '/Applications/Hermes.app', port: 0, timeoutMs: 60000, checkUpdates: false, hermes: null };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--app') args.app = argv[++i];
-    else if (arg === '--original') args.original = argv[++i];
     else if (arg === '--port') args.port = Number(argv[++i]);
     else if (arg === '--timeout-ms') args.timeoutMs = Number(argv[++i]);
+    else if (arg === '--check-updates') args.checkUpdates = true;
+    else if (arg === '--hermes') args.hermes = argv[++i];
     else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node scripts/safety-check.mjs --app /Applications/Hermes.zh.app --original /Applications/Hermes.app');
+      console.log('Usage: node scripts/safety-check.mjs [--app /Applications/Hermes.app] [--check-updates] [--hermes hermes]');
       process.exit(0);
     } else {
       throw new Error(`Unknown argument: ${arg}`);
@@ -45,6 +46,30 @@ function verifySignature(appPath) {
   if (process.platform !== 'darwin') return { ok: true, output: 'skipped on non-darwin' };
   const result = spawnSync('codesign', ['--verify', '--deep', '--strict', '--verbose=2', appPath], { encoding: 'utf8' });
   return { ok: result.status === 0, output: (result.stderr || result.stdout || '').trim() };
+}
+
+function commandExists(cmd) {
+  const result = spawnSync('sh', ['-lc', `command -v ${JSON.stringify(cmd)} >/dev/null 2>&1`], { encoding: 'utf8' });
+  return result.status === 0;
+}
+
+function resolveHermes(explicit) {
+  if (explicit) return explicit;
+  if (commandExists('hermes')) return 'hermes';
+  const local = path.join(os.homedir(), '.local', 'bin', 'hermes');
+  return fs.existsSync(local) ? local : null;
+}
+
+function checkUpdaterStatus(args) {
+  if (!args.checkUpdates) return null;
+  const hermes = resolveHermes(args.hermes);
+  if (!hermes) return { ok: false, skipped: true, message: 'hermes command not found' };
+  const result = spawnSync(hermes, ['update', '--check'], { encoding: 'utf8' });
+  return {
+    ok: result.status === 0,
+    command: hermes,
+    output: (result.stdout || result.stderr || '').trim().split('\n').slice(-8)
+  };
 }
 
 function wait(ms) {
@@ -221,26 +246,25 @@ async function checkToggle(appPath, port, timeoutMs) {
 
 const args = parseArgs(process.argv.slice(2));
 assert(fs.existsSync(args.app), `App not found: ${args.app}`);
-assert(fs.existsSync(args.original), `Original app not found: ${args.original}`);
 
-const originalArchive = readAsar(appAsarPath(args.original));
-const patchedArchive = readAsar(appAsarPath(args.app));
-assert(!hasInjection(originalArchive), 'Original app unexpectedly contains zh switcher injection');
-assert(hasInjection(patchedArchive), 'Patched app is missing zh switcher injection');
+const archive = readAsar(appAsarPath(args.app));
+assert(hasInjection(archive), 'Hermes app is missing zh switcher injection');
 
-const originalSignature = verifySignature(args.original);
-const patchedSignature = verifySignature(args.app);
-assert(originalSignature.ok, `Original app signature invalid: ${originalSignature.output}`);
-assert(patchedSignature.ok, `Patched app signature invalid: ${patchedSignature.output}`);
+const signature = verifySignature(args.app);
+assert(signature.ok, `Hermes app signature invalid: ${signature.output}`);
+
+const updater = checkUpdaterStatus(args);
+if (updater && !updater.ok) {
+  throw new Error(`Hermes update check failed: ${(updater.output || []).join('\n')}`);
+}
 
 const port = await pickPort(args.port);
 const toggle = await checkToggle(args.app, port, args.timeoutMs);
 console.log(JSON.stringify({
   app: args.app,
-  original: args.original,
-  originalUnpatched: true,
   patchedInstalled: true,
-  originalSignatureOk: originalSignature.ok,
-  patchedSignatureOk: patchedSignature.ok,
+  signatureOk: signature.ok,
+  signatureOutput: signature.output.split('\n').slice(-2).join('\n'),
+  updater,
   toggle
 }, null, 2));

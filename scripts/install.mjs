@@ -15,19 +15,21 @@ import {
 
 const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const uiScriptPath = path.join(rootDir, 'dist', 'hermes-zh-ui.js');
-const originalHermesApp = '/Applications/Hermes.app';
 
 function parseArgs(argv) {
-  const args = { app: '/Applications/Hermes.app', copy: null, inPlace: false, yes: false, dryRun: false };
+  const args = { app: '/Applications/Hermes.app', yes: false, dryRun: false, force: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--app') args.app = argv[++i];
-    else if (arg === '--copy') args.copy = argv[++i];
-    else if (arg === '--in-place') args.inPlace = true;
+    else if (arg === '--copy') throw new Error('Copy installs are no longer supported. Patch the existing Hermes.app in place.');
+    else if (arg === '--in-place') {
+      // Kept as a no-op for older command lines; all installs are now in-place.
+    }
     else if (arg === '--yes') args.yes = true;
     else if (arg === '--dry-run') args.dryRun = true;
+    else if (arg === '--force') args.force = true;
     else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node scripts/install.mjs --app /Applications/Hermes.app [--copy /Applications/Hermes.zh.app | --in-place --yes] [--dry-run]');
+      console.log('Usage: node scripts/install.mjs [--app /Applications/Hermes.app] --yes [--dry-run] [--force]');
       process.exit(0);
     } else {
       throw new Error(`Unknown argument: ${arg}`);
@@ -54,6 +56,43 @@ function verifySignature(appPath) {
   run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', appPath]);
 }
 
+function restoreAsarAfterFailure(asarPath, appPath, originalAsar, cause) {
+  try {
+    fs.writeFileSync(asarPath, originalAsar);
+    signApp(appPath);
+    clearLaunchQuarantine(appPath);
+    verifySignature(appPath);
+  } catch (restoreError) {
+    throw new Error(`Install failed and rollback also failed: ${cause.message}\nRollback error: ${restoreError.message}`);
+  }
+  throw new Error(`Install failed. Original app.asar was restored: ${cause.message}`);
+}
+
+function clearLaunchQuarantine(appPath) {
+  if (process.platform !== 'darwin') return;
+  spawnSync('xattr', ['-dr', 'com.apple.quarantine', appPath], { encoding: 'utf8' });
+}
+
+function appExecutablePath(appPath) {
+  if (process.platform !== 'darwin') return null;
+  const macosDir = path.join(appPath, 'Contents', 'MacOS');
+  const preferred = path.join(macosDir, 'Hermes');
+  if (fs.existsSync(preferred)) return preferred;
+  if (!fs.existsSync(macosDir)) return null;
+  const found = fs.readdirSync(macosDir).find((name) => fs.statSync(path.join(macosDir, name)).isFile());
+  return found ? path.join(macosDir, found) : null;
+}
+
+function assertNotRunning(appPath, force) {
+  if (process.platform !== 'darwin' || force) return;
+  const executable = appExecutablePath(appPath);
+  if (!executable) return;
+  const result = spawnSync('pgrep', ['-fl', executable], { encoding: 'utf8' });
+  if (result.status === 0 && result.stdout.trim()) {
+    throw new Error(`Hermes appears to be running from ${appPath}. Quit Hermes first, or rerun with --force if you are sure.`);
+  }
+}
+
 function appAsarPath(appPath) {
   return path.join(appPath, 'Contents', 'Resources', 'app.asar');
 }
@@ -64,39 +103,18 @@ function backupPathFor(appPath, asarHash) {
   return path.join(dir, `${path.basename(appPath)}-${appHash}-${asarHash.slice(0, 12)}.asar`);
 }
 
-function copyApp(src, dest, dryRun) {
-  if (!dest) return src;
-  if (dryRun) {
-    console.log(`[dry-run] would copy ${src} -> ${dest}`);
-    return dest;
-  }
-  if (fs.existsSync(dest)) {
-    throw new Error(`Copy target already exists: ${dest}`);
-  }
-  run('ditto', [src, dest]);
-  return dest;
-}
-
 const args = parseArgs(process.argv.slice(2));
-if (!args.copy && !args.inPlace) {
-  throw new Error('Choose one install mode: --copy <target.app> or --in-place --yes');
-}
-if (args.inPlace && !args.yes) {
-  throw new Error('In-place install modifies the app bundle. Re-run with --in-place --yes after testing a copy.');
-}
-if (args.inPlace && path.resolve(args.app) === originalHermesApp) {
-  throw new Error('Refusing to patch /Applications/Hermes.app in place. Use --copy /Applications/Hermes.zh.app or target /Applications/Hermes.zh.app.');
+if (!args.yes && !args.dryRun) {
+  throw new Error('Installing modifies the selected Hermes app bundle. Re-run with --yes after quitting Hermes.');
 }
 if (!fs.existsSync(args.app)) throw new Error(`App not found: ${args.app}`);
 if (!fs.existsSync(uiScriptPath)) throw new Error(`UI script not found: ${uiScriptPath}`);
-const sourceAsarPath = appAsarPath(args.app);
-if (!fs.existsSync(sourceAsarPath)) throw new Error(`app.asar not found: ${sourceAsarPath}`);
-
-const targetApp = copyApp(args.app, args.copy, args.dryRun);
+const targetApp = args.app;
 if (args.dryRun) {
-  console.log(`[dry-run] would patch ${targetApp}`);
+  console.log(`[dry-run] would patch existing Hermes app in place: ${targetApp}`);
   process.exit(0);
 }
+assertNotRunning(targetApp, args.force);
 const asarPath = appAsarPath(targetApp);
 if (!fs.existsSync(asarPath)) throw new Error(`app.asar not found: ${asarPath}`);
 
@@ -106,17 +124,22 @@ const backupPath = backupPathFor(targetApp, originalHash);
 fs.mkdirSync(path.dirname(backupPath), { recursive: true });
 if (!fs.existsSync(backupPath)) fs.writeFileSync(backupPath, originalAsar);
 
-const archive = readAsar(asarPath);
-const indexHtml = archive.files.get(INDEX_PATH)?.toString('utf8');
-if (!indexHtml) throw new Error(`${INDEX_PATH} not found in app.asar`);
-archive.files.set(INDEX_PATH, Buffer.from(injectIndex(indexHtml), 'utf8'));
-archive.files.set(UI_SCRIPT_PATH, fs.readFileSync(uiScriptPath));
-packAsar(archive, asarPath);
-signApp(targetApp);
-verifySignature(targetApp);
+try {
+  const archive = readAsar(asarPath);
+  const indexHtml = archive.files.get(INDEX_PATH)?.toString('utf8');
+  if (!indexHtml) throw new Error(`${INDEX_PATH} not found in app.asar`);
+  archive.files.set(INDEX_PATH, Buffer.from(injectIndex(indexHtml), 'utf8'));
+  archive.files.set(UI_SCRIPT_PATH, fs.readFileSync(uiScriptPath));
+  packAsar(archive, asarPath);
+  signApp(targetApp);
+  clearLaunchQuarantine(targetApp);
+  verifySignature(targetApp);
 
-const patched = readAsar(asarPath);
-if (!hasInjection(patched)) throw new Error('Patch verification failed: injection missing');
+  const patched = readAsar(asarPath);
+  if (!hasInjection(patched)) throw new Error('Patch verification failed: injection missing');
+} catch (error) {
+  restoreAsarAfterFailure(asarPath, targetApp, originalAsar, error);
+}
 
 console.log(`Installed Hermes zh switcher into: ${targetApp}`);
 console.log(`Backup saved at: ${backupPath}`);
