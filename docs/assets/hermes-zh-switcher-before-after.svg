@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
-  <title id="title">Hermes Zh Switcher before and after comparison</title>
-  <desc id="desc">A dark before and after comparison showing Hermes Desktop English UI labels converted into Chinese labels by Hermes Zh Switcher.</desc>
+  <title id="title">Hermes Zh Switcher install data comparison</title>
+  <desc id="desc">A dark before and after data comparison showing Hermes Zh Switcher installation state before install and after install.</desc>
   <defs>
     <linearGradient id="pageGlow" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#111827"/>
@@ -17,7 +17,7 @@
       <stop offset="1" stop-color="#0d3b2a"/>
     </linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="26" stdDeviation="26" flood-color="#020617" flood-opacity="0.45"/>
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#020617" flood-opacity="0.45"/>
     </filter>
   </defs>
 
@@ -27,44 +27,66 @@
   <rect x="96" y="64" width="1408" height="6" fill="url(#accent)"/>
 
   <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
-    <text x="146" y="154" fill="#f3f4f6" font-size="54" font-weight="800">Hermes Zh Switcher</text>
-    <text x="146" y="208" fill="#a7f3d0" font-size="29" font-weight="800">给 Hermes Desktop 增加可关闭的中文 UI 层</text>
-    <text x="146" y="258" fill="#a8b4c8" font-size="24">Unofficial, reversible Chinese / English UI switcher.</text>
+    <text x="146" y="150" fill="#f3f4f6" font-size="52" font-weight="800">Hermes Zh Switcher</text>
+    <text x="146" y="204" fill="#a7f3d0" font-size="29" font-weight="800">安装前 / 安装后数据对比</text>
+    <text x="146" y="252" fill="#a8b4c8" font-size="23">Verifiable local UI patch state from install and verify commands.</text>
 
     <g filter="url(#shadow)">
-      <rect x="146" y="318" width="560" height="346" rx="24" fill="#101827" stroke="#33435e" stroke-width="2"/>
-      <text x="182" y="374" fill="#fca5a5" font-size="22" font-weight="800">Before</text>
-      <text x="182" y="424" fill="#f8fafc" font-size="32" font-weight="850">Settings</text>
-      <text x="182" y="468" fill="#a8b4c8" font-size="22" font-weight="600">Search settings...</text>
-      <line x1="182" y1="508" x2="670" y2="508" stroke="#33435e" stroke-width="2"/>
-      <text x="182" y="558" fill="#f8fafc" font-size="27" font-weight="850">Skills &amp; Tools</text>
-      <text x="182" y="598" fill="#a8b4c8" font-size="22" font-weight="600">Send follow-up</text>
-      <text x="182" y="640" fill="#f8fafc" font-size="24" font-weight="850">Drop files to attach</text>
+      <rect x="146" y="302" width="560" height="388" rx="24" fill="#101827" stroke="#33435e" stroke-width="2"/>
+      <text x="182" y="356" fill="#fca5a5" font-size="22" font-weight="800">Before install</text>
+      <text x="182" y="400" fill="#f8fafc" font-size="30" font-weight="850">Baseline Hermes.app</text>
+
+      <line x1="182" y1="432" x2="670" y2="432" stroke="#33435e" stroke-width="2"/>
+      <text x="182" y="474" fill="#a8b4c8" font-size="20" font-weight="700">installed</text>
+      <text x="616" y="474" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">false</text>
+
+      <text x="182" y="518" fill="#a8b4c8" font-size="20" font-weight="700">index marker</text>
+      <text x="616" y="518" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">false</text>
+
+      <text x="182" y="562" fill="#a8b4c8" font-size="20" font-weight="700">switcher script</text>
+      <text x="616" y="562" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">0 KB</text>
+
+      <text x="182" y="606" fill="#a8b4c8" font-size="20" font-weight="700">UI modes</text>
+      <text x="616" y="606" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">English only</text>
+
+      <text x="182" y="650" fill="#a8b4c8" font-size="20" font-weight="700">user-data writes</text>
+      <text x="616" y="650" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">0</text>
     </g>
 
     <g filter="url(#shadow)">
-      <rect x="894" y="318" width="560" height="346" rx="24" fill="url(#afterFill)" stroke="#2f7654" stroke-width="2"/>
-      <text x="930" y="374" fill="#86efac" font-size="22" font-weight="800">After</text>
-      <text x="930" y="424" fill="#f8fafc" font-size="32" font-weight="850">设置</text>
-      <text x="930" y="468" fill="#9cf7c8" font-size="22" font-weight="700">搜索设置...</text>
-      <line x1="930" y1="508" x2="1418" y2="508" stroke="#347f5e" stroke-width="2"/>
-      <text x="930" y="558" fill="#f8fafc" font-size="27" font-weight="850">技能与工具</text>
-      <text x="930" y="598" fill="#9cf7c8" font-size="22" font-weight="700">发送后续消息</text>
-      <text x="930" y="640" fill="#f8fafc" font-size="24" font-weight="850">拖入文件以附加</text>
+      <rect x="894" y="302" width="560" height="388" rx="24" fill="url(#afterFill)" stroke="#2f7654" stroke-width="2"/>
+      <text x="930" y="356" fill="#86efac" font-size="22" font-weight="800">After install</text>
+      <text x="930" y="400" fill="#f8fafc" font-size="30" font-weight="850">Chinese UI layer active</text>
+
+      <line x1="930" y1="432" x2="1418" y2="432" stroke="#347f5e" stroke-width="2"/>
+      <text x="930" y="474" fill="#9cf7c8" font-size="20" font-weight="800">installed</text>
+      <text x="1368" y="474" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">true</text>
+
+      <text x="930" y="518" fill="#9cf7c8" font-size="20" font-weight="800">index marker</text>
+      <text x="1368" y="518" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">true</text>
+
+      <text x="930" y="562" fill="#9cf7c8" font-size="20" font-weight="800">switcher script</text>
+      <text x="1368" y="562" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">156.1 KB</text>
+
+      <text x="930" y="606" fill="#9cf7c8" font-size="20" font-weight="800">UI modes</text>
+      <text x="1368" y="606" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">zh-CN + EN</text>
+
+      <text x="930" y="650" fill="#9cf7c8" font-size="20" font-weight="800">user-data writes</text>
+      <text x="1368" y="650" fill="#f8fafc" font-size="22" font-weight="850" text-anchor="end">0</text>
     </g>
 
     <g font-size="18" font-weight="850">
-      <rect x="146" y="698" width="224" height="44" rx="22" fill="#172338" stroke="#3b4d6c"/>
-      <text x="172" y="727" fill="#c7d2fe">Reversible patch</text>
+      <rect x="146" y="714" width="236" height="44" rx="22" fill="#172338" stroke="#3b4d6c"/>
+      <text x="174" y="743" fill="#c7d2fe">Backup before write</text>
 
-      <rect x="392" y="698" width="210" height="44" rx="22" fill="#123326" stroke="#2f7654"/>
-      <text x="420" y="727" fill="#a7f3d0">Backup restore</text>
+      <rect x="404" y="714" width="218" height="44" rx="22" fill="#123326" stroke="#2f7654"/>
+      <text x="433" y="743" fill="#a7f3d0">Rollback on failure</text>
 
-      <rect x="624" y="698" width="190" height="44" rx="22" fill="#172338" stroke="#3b4d6c"/>
-      <text x="653" y="727" fill="#fde68a">No user data</text>
+      <rect x="644" y="714" width="190" height="44" rx="22" fill="#172338" stroke="#3b4d6c"/>
+      <text x="673" y="743" fill="#fde68a">No credentials</text>
 
-      <rect x="836" y="698" width="174" height="44" rx="22" fill="#123326" stroke="#2f7654"/>
-      <text x="868" y="727" fill="#bbf7d0">中 / EN toggle</text>
+      <rect x="856" y="714" width="246" height="44" rx="22" fill="#123326" stroke="#2f7654"/>
+      <text x="886" y="743" fill="#bbf7d0">verify.mjs readable</text>
     </g>
   </g>
 </svg>
