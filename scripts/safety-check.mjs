@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { appAsarPath, resolveHermesApp } from './app-resolver.mjs';
+import { appAsarPath, resolveHermesApp, runtimeDistCandidates } from './app-resolver.mjs';
 import { hasInjection, readAsar } from './asar-utils.mjs';
 
 function parseArgs(argv) {
@@ -159,8 +159,7 @@ async function checkToggle(appPath, port, timeoutMs) {
   const child = spawn(appExecutable(appPath), [`--remote-debugging-port=${port}`], {
     env: {
       ...process.env,
-      HERMES_DESKTOP_USER_DATA_DIR: profileDir,
-      HERMES_HOME: path.join(profileDir, 'hermes-home')
+      HERMES_DESKTOP_USER_DATA_DIR: profileDir
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -247,6 +246,14 @@ const resolved = resolveHermesApp(args.app);
 
 const archive = readAsar(appAsarPath(resolved.app));
 assert(hasInjection(archive), 'Hermes app is missing zh switcher injection');
+const runtimeDists = runtimeDistCandidates(resolved.app).map((distPath) => {
+  const indexPath = path.join(distPath, 'index.html');
+  const scriptPath = path.join(distPath, 'hermes-zh-ui.js');
+  const installed = fs.readFileSync(indexPath, 'utf8').includes('hermes-zh-switcher:start')
+    && fs.existsSync(scriptPath);
+  return { path: distPath, installed };
+});
+assert(runtimeDists.every((item) => item.installed), `Hermes runtime dist is missing zh switcher injection: ${JSON.stringify(runtimeDists)}`);
 
 const signature = verifySignature(resolved.app);
 assert(signature.ok, `Hermes app signature invalid: ${signature.output}`);
@@ -263,6 +270,7 @@ console.log(JSON.stringify({
   app: resolved.app,
   redirected: resolved.redirected,
   patchedInstalled: true,
+  runtimeDists,
   signatureOk: signature.ok,
   signatureOutput: signature.output.split('\n').slice(-2).join('\n'),
   updater,

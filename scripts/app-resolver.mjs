@@ -6,6 +6,27 @@ export function appAsarPath(appPath) {
   return path.join(appPath, 'Contents', 'Resources', 'app.asar');
 }
 
+export function unpackedDistPath(appPath) {
+  return path.join(appPath, 'Contents', 'Resources', 'app.asar.unpacked', 'dist');
+}
+
+export function sourceDistPath(appPath) {
+  const parts = path.resolve(appPath).split(path.sep);
+  const releaseIndex = parts.lastIndexOf('release');
+  if (releaseIndex < 0) return null;
+  const desktopRoot = parts.slice(0, releaseIndex).join(path.sep) || path.sep;
+  return path.join(desktopRoot, 'dist');
+}
+
+export function runtimeDistCandidates(appPath) {
+  const candidates = [
+    unpackedDistPath(appPath),
+    sourceDistPath(appPath)
+  ].filter(Boolean);
+  return [...new Set(candidates)]
+    .filter((candidate) => fs.existsSync(path.join(candidate, 'index.html')));
+}
+
 export function hasAppAsar(appPath) {
   return fs.existsSync(appAsarPath(appPath));
 }

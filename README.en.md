@@ -47,6 +47,8 @@ After installation, a `中/EN` switch appears in the lower-right corner of Herme
 | Hermes Desktop `app.asar` | Modified in place after backup. If `/Applications/Hermes.app` is a setup launcher, scripts automatically patch the generated app under `~/.hermes/hermes-agent/apps/desktop/release/*/Hermes.app` |
 | `dist/index.html` inside `app.asar` | Receives a small script injection marker |
 | `dist/hermes-zh-ui.js` inside `app.asar` | Added as the UI switcher script |
+| Runtime unpacked directory `app.asar.unpacked/dist` | Mirrors the injection marker and `hermes-zh-ui.js` for builds where Electron prefers unpacked resources |
+| Generated directory `~/.hermes/hermes-agent/apps/desktop/dist` | Mirrors the injection marker and `hermes-zh-ui.js` for builds where Hermes Desktop loads the generated UI directory |
 | `/Applications/Hermes.zh.app` | Not created |
 | `~/.hermes`, profiles, model config, Gateway config | Not modified |
 | API keys, tokens, cookies, credentials | Not read |
@@ -63,7 +65,11 @@ node scripts/uninstall.mjs --app /Applications/Hermes.app --yes
 node scripts/update-hermes.mjs --app /Applications/Hermes.app --yes
 ```
 
-Uninstall removes the injection marker and `dist/hermes-zh-ui.js` from `app.asar`. It does not delete Hermes or user data.
+`verify` checks both `app.asar` and discovered runtime `dist` directories. Seeing only `installed: true` is not enough; every item in `runtimeDists` should also be `installed: true`. If runtime dist is not patched, Hermes may still render the English UI.
+
+Uninstall removes the injection marker and `hermes-zh-ui.js` from both `app.asar` and discovered runtime `dist` directories. It does not delete Hermes or user data.
+
+Some Hermes Desktop builds prefer `dist/index.html` from unpacked or generated runtime directories instead of the page inside `app.asar`. The installer now patches those directories automatically; if the UI is still English, run `node scripts/verify.mjs --app /Applications/Hermes.app` and confirm every `runtimeDists` item is `installed: true`.
 
 ## Verification
 

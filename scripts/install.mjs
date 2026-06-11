@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { appAsarPath, describeResolvedApp, resolveHermesApp } from './app-resolver.mjs';
+import { appAsarPath, describeResolvedApp, resolveHermesApp, runtimeDistCandidates } from './app-resolver.mjs';
 import {
   INDEX_PATH,
   UI_SCRIPT_PATH,
@@ -100,6 +100,32 @@ function backupPathFor(appPath, asarHash) {
   return path.join(dir, `${path.basename(appPath)}-${appHash}-${asarHash.slice(0, 12)}.asar`);
 }
 
+function backupRuntimeFilePath(appPath, distPath, fileName, fileHash) {
+  const dir = path.join(os.homedir(), 'Library', 'Application Support', 'hermes-zh-switcher', 'backups', 'runtime-dist');
+  const appHash = sha256(Buffer.from(path.resolve(appPath))).slice(0, 12);
+  const distHash = sha256(Buffer.from(path.resolve(distPath))).slice(0, 12);
+  return path.join(dir, `${path.basename(appPath)}-${appHash}-${distHash}-${fileHash.slice(0, 12)}-${fileName}`);
+}
+
+function hasRuntimeInjection(distPath) {
+  const indexPath = path.join(distPath, 'index.html');
+  return fs.existsSync(indexPath)
+    && fs.readFileSync(indexPath, 'utf8').includes('hermes-zh-switcher:start')
+    && fs.existsSync(path.join(distPath, 'hermes-zh-ui.js'));
+}
+
+function installRuntimeDist(distPath, appPath) {
+  const indexPath = path.join(distPath, 'index.html');
+  const scriptPath = path.join(distPath, 'hermes-zh-ui.js');
+  const originalIndex = fs.readFileSync(indexPath);
+  const backupPath = backupRuntimeFilePath(appPath, distPath, 'index.html', sha256(originalIndex));
+  fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+  if (!fs.existsSync(backupPath)) fs.writeFileSync(backupPath, originalIndex);
+  fs.writeFileSync(indexPath, injectIndex(originalIndex.toString('utf8')));
+  fs.copyFileSync(uiScriptPath, scriptPath);
+  if (!hasRuntimeInjection(distPath)) throw new Error(`Runtime dist verification failed: ${distPath}`);
+}
+
 const args = parseArgs(process.argv.slice(2));
 if (!args.yes && !args.dryRun) {
   throw new Error('Installing modifies the selected Hermes app bundle. Re-run with --yes after quitting Hermes.');
@@ -134,6 +160,8 @@ try {
   archive.files.set(INDEX_PATH, Buffer.from(injectIndex(indexHtml), 'utf8'));
   archive.files.set(UI_SCRIPT_PATH, fs.readFileSync(uiScriptPath));
   packAsar(archive, asarPath);
+  const runtimeDists = runtimeDistCandidates(targetApp);
+  for (const distPath of runtimeDists) installRuntimeDist(distPath, targetApp);
   signApp(targetApp);
   clearLaunchQuarantine(targetApp);
   verifySignature(targetApp);
@@ -145,4 +173,7 @@ try {
 }
 
 console.log(`Installed Hermes zh switcher into: ${targetApp}`);
+for (const distPath of runtimeDistCandidates(targetApp)) {
+  console.log(`Installed runtime dist overlay into: ${distPath}`);
+}
 console.log(`Backup saved at: ${backupPath}`);

@@ -47,6 +47,8 @@ open -n /Applications/Hermes.app
 | Hermes Desktop `app.asar` | 备份后原地修改；如果 `/Applications/Hermes.app` 是 setup launcher，脚本会自动 patch `~/.hermes/hermes-agent/apps/desktop/release/*/Hermes.app` 下生成的真实 app |
 | `app.asar` 内的 `dist/index.html` | 写入一个小的脚本注入标记 |
 | `app.asar` 内的 `dist/hermes-zh-ui.js` | 加入中文/英文 UI 切换脚本 |
+| 运行时解包目录 `app.asar.unpacked/dist` | 同步写入注入标记和 `hermes-zh-ui.js`，覆盖 Electron 优先加载解包资源的构建 |
+| 生成目录 `~/.hermes/hermes-agent/apps/desktop/dist` | 同步写入注入标记和 `hermes-zh-ui.js`，覆盖 Hermes Desktop 从生成目录加载 UI 的构建 |
 | `/Applications/Hermes.zh.app` | 不创建 |
 | `~/.hermes`、profiles、model config、Gateway config | 不修改 |
 | API keys、tokens、cookies、credentials | 不读取 |
@@ -63,13 +65,15 @@ open -n /Applications/Hermes.app
 node scripts/verify.mjs --app /Applications/Hermes.app
 ```
 
+`verify` 会同时检查 `app.asar` 和已发现的运行时 `dist` 目录。只看到 `installed: true` 还不够；`runtimeDists` 里的每一项也应该是 `installed: true`。如果 runtime 没有注入，Hermes 可能仍然显示英文。
+
 ### 卸载
 
 ```bash
 node scripts/uninstall.mjs --app /Applications/Hermes.app --yes
 ```
 
-卸载会从 `app.asar` 移除注入标记和 `dist/hermes-zh-ui.js`，不会删除 Hermes 或用户数据。
+卸载会从 `app.asar` 和已发现的运行时 `dist` 目录移除注入标记和 `hermes-zh-ui.js`，不会删除 Hermes 或用户数据。
 
 ### 安全更新 Hermes
 
@@ -85,6 +89,8 @@ node scripts/update-hermes.mjs --app /Applications/Hermes.app --yes
 4. 验证补丁状态。
 
 如果你直接使用 Hermes 原生 updater，更新不应该被阻塞。补丁可能会因为上游替换 `app.asar` 而消失，更新后重新运行 install 命令即可。
+
+某些 Hermes Desktop 构建会优先加载解包或生成目录里的 `dist/index.html`，而不是 `app.asar` 内的页面。当前安装器会自动同步 patch 这些目录；如果界面仍是英文，请先运行 `node scripts/verify.mjs --app /Applications/Hermes.app`，确认 `runtimeDists` 全部为 `installed: true`。
 
 ### Dry Run
 

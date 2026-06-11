@@ -11,6 +11,8 @@ The installer patches the resolved Hermes Desktop app in place. On newer Hermes 
 | Resolved Hermes Desktop `Contents/Resources/app.asar` | Repacked after backup |
 | `dist/index.html` inside `app.asar` | Adds the `hermes-zh-switcher` injection marker |
 | `dist/hermes-zh-ui.js` inside `app.asar` | Adds the Chinese/English UI switcher script |
+| `Contents/Resources/app.asar.unpacked/dist` when present | Mirrors the injection marker and `hermes-zh-ui.js` for builds that load unpacked renderer resources |
+| `~/.hermes/hermes-agent/apps/desktop/dist` when present | Mirrors the injection marker and `hermes-zh-ui.js` for generated desktop builds that load this directory at runtime |
 | macOS code signature | Re-signs ad-hoc after local bundle modification |
 
 ## What It Does Not Change
@@ -30,6 +32,12 @@ Before install, the current `app.asar` is backed up under:
 ~/Library/Application Support/hermes-zh-switcher/backups/
 ```
 
+Runtime `dist/index.html` files are backed up under:
+
+```text
+~/Library/Application Support/hermes-zh-switcher/backups/runtime-dist/
+```
+
 If install or uninstall fails during write, signing, or injection verification, the script attempts to restore the previous `app.asar`.
 
 ## Dry Run First
@@ -46,11 +54,11 @@ node scripts/update-hermes.mjs --app /Applications/Hermes.app --dry-run
 node scripts/uninstall.mjs --app /Applications/Hermes.app --yes
 ```
 
-Uninstall removes the UI injection from `app.asar`. It does not delete Hermes Desktop or user data.
+Uninstall removes the UI injection from `app.asar` and discovered runtime `dist` directories. It does not delete Hermes Desktop or user data.
 
 ## macOS Signing Note
 
-Modifying `app.asar` changes the app bundle. Hermes Zh Switcher re-signs the selected app ad-hoc so it can launch locally. Apple notarization is not preserved after local patching.
+Modifying `app.asar` or unpacked renderer files changes the app bundle. Hermes Zh Switcher re-signs the selected app ad-hoc so it can launch locally. Apple notarization is not preserved after local patching.
 
 ## Public Screenshot Safety
 

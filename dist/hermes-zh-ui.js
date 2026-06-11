@@ -2,7 +2,7 @@ try {
   (function () {
     'use strict';
 
-    var VERSION = '0.6.1';
+    var VERSION = '0.6.2';
     var KEY = 'hermes.zh.ui.enabled';
     var OWNED = 'data-hermes-zh-owned';
     var DICT = new Map(Object.entries({

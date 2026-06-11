@@ -2,7 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { appAsarPath, describeResolvedApp, resolveHermesApp } from './app-resolver.mjs';
+import { appAsarPath, describeResolvedApp, resolveHermesApp, runtimeDistCandidates } from './app-resolver.mjs';
 import {
   INDEX_PATH,
   UI_SCRIPT_PATH,
@@ -82,6 +82,24 @@ function assertNotRunning(appPath, force) {
   }
 }
 
+function removeRuntimeDist(distPath) {
+  const indexPath = path.join(distPath, 'index.html');
+  const scriptPath = path.join(distPath, 'hermes-zh-ui.js');
+  if (fs.existsSync(indexPath)) {
+    const indexHtml = fs.readFileSync(indexPath, 'utf8');
+    fs.writeFileSync(indexPath, removeIndexInjection(indexHtml));
+  }
+  if (fs.existsSync(scriptPath)) fs.rmSync(scriptPath);
+}
+
+function hasRuntimeInjection(distPath) {
+  const indexPath = path.join(distPath, 'index.html');
+  const scriptPath = path.join(distPath, 'hermes-zh-ui.js');
+  return fs.existsSync(indexPath)
+    && fs.readFileSync(indexPath, 'utf8').includes('hermes-zh-switcher:start')
+    && fs.existsSync(scriptPath);
+}
+
 const args = parseArgs(process.argv.slice(2));
 const resolved = resolveHermesApp(args.app);
 const targetApp = resolved.app;
@@ -89,7 +107,9 @@ const asarPath = appAsarPath(targetApp);
 if (!fs.existsSync(asarPath)) throw new Error(`app.asar not found: ${asarPath}`);
 
 const archive = readAsar(asarPath);
-if (!hasInjection(archive)) {
+const runtimeDists = runtimeDistCandidates(targetApp);
+const hasAnyRuntimeInjection = runtimeDists.some((distPath) => hasRuntimeInjection(distPath));
+if (!hasInjection(archive) && !hasAnyRuntimeInjection) {
   console.log('Hermes zh switcher is not installed.');
   process.exit(0);
 }
@@ -113,6 +133,7 @@ try {
   archive.files.set(INDEX_PATH, Buffer.from(removeIndexInjection(indexHtml), 'utf8'));
   archive.files.delete(UI_SCRIPT_PATH);
   packAsar(archive, asarPath);
+  for (const distPath of runtimeDists) removeRuntimeDist(distPath);
   signApp(targetApp);
   clearLaunchQuarantine(targetApp);
   verifySignature(targetApp);
